@@ -1,6 +1,6 @@
 # SCIC / EJP-13 Service Booking Backend API Documentation
 
-**Base URL**: `http://localhost:5001/api` *(Replace `http://localhost:5001` with production host URL post-deployment)*
+**Base URL**: `https://servexa.onrender.com/api`
 
 Standardized JSON Response Structures:
 - **Success Response**:
