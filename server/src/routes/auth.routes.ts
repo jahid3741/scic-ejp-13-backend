@@ -5,6 +5,8 @@ import { authRateLimiter } from '../middleware/rateLimiter.js';
 import {
   registerValidationSchema,
   loginValidationSchema,
+  forgotPasswordValidationSchema,
+  resetPasswordValidationSchema,
 } from '../services/auth/auth.validation.js';
 import { authController } from '../services/auth/auth.controller.js';
 
@@ -23,5 +25,17 @@ router.post(
   authController.login
 );
 router.get('/me', authMiddleware, authController.getMe);
+router.post(
+  '/forgot-password',
+  authRateLimiter,
+  validateRequest(forgotPasswordValidationSchema),
+  authController.forgotPassword
+);
+router.post(
+  '/reset-password',
+  authRateLimiter,
+  validateRequest(resetPasswordValidationSchema),
+  authController.resetPassword
+);
 
 export const authRoutes = router;

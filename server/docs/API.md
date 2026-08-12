@@ -22,8 +22,8 @@ Standardized JSON Response Structures:
   }
   ```
 
-**Total Mounted Routes**: 28 Endpoints
-- **Auth**: 3 routes (`POST /auth/register`, `POST /auth/login`, `GET /auth/me`)
+**Total Mounted Routes**: 30 Endpoints
+- **Auth**: 5 routes (`POST /auth/register`, `POST /auth/login`, `GET /auth/me`, `POST /auth/forgot-password`, `POST /auth/reset-password`)
 - **Users**: 4 routes (`GET /users`, `GET /users/:id`, `PATCH /users/:id`, `DELETE /users/:id`)
 - **Categories**: 5 routes (`POST /categories`, `GET /categories`, `GET /categories/:id`, `PATCH /categories/:id`, `DELETE /categories/:id`)
 - **Services**: 5 routes (`POST /services`, `GET /services`, `GET /services/:id`, `PATCH /services/:id`, `DELETE /services/:id`)
@@ -128,6 +128,57 @@ Standardized JSON Response Structures:
     }
   }
   ```
+
+---
+
+### 1.4 Forgot Password Request
+- **Method**: `POST`
+- **URL**: `/auth/forgot-password`
+- **Auth Required**: No (Public)
+- **Description**: Request a password reset link sent via email. Always returns generic success response to prevent email enumeration.
+- **Request Body**:
+  ```json
+  {
+    "email": "jane@example.com"
+  }
+  ```
+- **Success Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "message": "If an account with that email exists, a password reset link has been sent.",
+    "data": {}
+  }
+  ```
+- **Error Responses**:
+  - `400 Bad Request`: Invalid email input.
+  - `429 Too Many Requests`: Rate limit exceeded.
+
+---
+
+### 1.5 Reset Password
+- **Method**: `POST`
+- **URL**: `/auth/reset-password`
+- **Auth Required**: No (Public)
+- **Description**: Reset user password using the single-use reset token sent to their email.
+- **Request Body**:
+  ```json
+  {
+    "token": "7f8a9b...",
+    "newPassword": "NewPassword123!"
+  }
+  ```
+- **Success Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "message": "Password has been reset successfully. Please log in with your new password.",
+    "data": {}
+  }
+  ```
+- **Error Responses**:
+  - `400 Bad Request`: Token is invalid, expired, or already used. Validation error for short new password.
+  - `429 Too Many Requests`: Rate limit exceeded.
 
 ---
 

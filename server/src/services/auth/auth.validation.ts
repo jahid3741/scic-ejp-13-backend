@@ -22,3 +22,19 @@ export const loginValidationSchema = z.object({
     .string({ message: 'Password is required' })
     .min(1, 'Password cannot be empty'),
 });
+
+export const forgotPasswordValidationSchema = z.object({
+  email: z
+    .string({ message: 'Email is required' })
+    .email('Invalid email address')
+    .transform((val) => val.toLowerCase().trim()),
+});
+
+export const resetPasswordValidationSchema = z.object({
+  token: z
+    .string({ message: 'Reset token is required' })
+    .min(1, 'Token cannot be empty'),
+  newPassword: z
+    .string({ message: 'New password is required' })
+    .min(6, 'Password must be at least 6 characters'),
+});
