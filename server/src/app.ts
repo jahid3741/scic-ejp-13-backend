@@ -9,6 +9,9 @@ import { globalErrorHandler } from './middleware/error.middleware.js';
 
 const app: Application = express();
 
+// Trust proxy for Render deployment / reverse proxy setup
+app.set('trust proxy', 1);
+
 // Security Headers
 app.use(helmet());
 

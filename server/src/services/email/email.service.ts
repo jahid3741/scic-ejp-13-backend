@@ -7,6 +7,26 @@ interface SendPasswordResetParams {
   resetUrl: string;
 }
 
+const EMAIL_TIMEOUT_MS = 8000; // 8 seconds maximum timeout for SMTP send
+
+const withTimeout = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`SMTP email sending timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    promise
+      .then((res) => {
+        clearTimeout(timer);
+        resolve(res);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+};
+
 const createTransporter = () => {
   if (config.smtp.host && config.smtp.user) {
     return nodemailer.createTransport({
@@ -17,6 +37,9 @@ const createTransporter = () => {
         user: config.smtp.user,
         pass: config.smtp.pass,
       },
+      connectionTimeout: 5000, // 5 seconds connection timeout
+      greetingTimeout: 5000,   // 5 seconds greeting timeout
+      socketTimeout: 5000,     // 5 seconds socket inactivity timeout
     });
   }
   return null;
@@ -61,13 +84,16 @@ export const sendPasswordResetEmail = async ({
   }
 
   try {
-    await transporter.sendMail({
-      from: config.smtp.from,
-      to,
-      subject: 'Reset Your Servexa Account Password',
-      text,
-      html,
-    });
+    await withTimeout(
+      transporter.sendMail({
+        from: config.smtp.from,
+        to,
+        subject: 'Reset Your Servexa Account Password',
+        text,
+        html,
+      }),
+      EMAIL_TIMEOUT_MS
+    );
     return true;
   } catch (error) {
     console.error('[EMAIL ERROR] Failed to send password reset email:', error);
