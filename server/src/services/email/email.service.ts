@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { config } from '../../config/index.js';
 
 interface SendPasswordResetParams {
@@ -7,40 +7,9 @@ interface SendPasswordResetParams {
   resetUrl: string;
 }
 
-const EMAIL_TIMEOUT_MS = 8000; // 8 seconds maximum timeout for SMTP send
-
-const withTimeout = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error(`SMTP email sending timed out after ${timeoutMs}ms`));
-    }, timeoutMs);
-
-    promise
-      .then((res) => {
-        clearTimeout(timer);
-        resolve(res);
-      })
-      .catch((err) => {
-        clearTimeout(timer);
-        reject(err);
-      });
-  });
-};
-
-const createTransporter = () => {
-  if (config.smtp.host && config.smtp.user) {
-    return nodemailer.createTransport({
-      host: config.smtp.host,
-      port: config.smtp.port,
-      secure: config.smtp.port === 465,
-      auth: {
-        user: config.smtp.user,
-        pass: config.smtp.pass,
-      },
-      connectionTimeout: 5000, // 5 seconds connection timeout
-      greetingTimeout: 5000,   // 5 seconds greeting timeout
-      socketTimeout: 5000,     // 5 seconds socket inactivity timeout
-    });
+const getResendClient = () => {
+  if (config.resendApiKey) {
+    return new Resend(config.resendApiKey);
   }
   return null;
 };
@@ -50,7 +19,7 @@ export const sendPasswordResetEmail = async ({
   name,
   resetUrl,
 }: SendPasswordResetParams): Promise<boolean> => {
-  const transporter = createTransporter();
+  const resend = getResendClient();
 
   const html = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
@@ -76,7 +45,7 @@ export const sendPasswordResetEmail = async ({
 
   const text = `Hello ${name},\n\nYou requested a password reset. Click the following link to reset your password:\n${resetUrl}\n\nThis link expires in 1 hour. If you did not request this, please ignore this email.`;
 
-  if (!transporter) {
+  if (!resend) {
     if (config.env !== 'production') {
       console.log(`[EMAIL DEV LOG] Password reset email for ${to}: ${resetUrl}`);
     }
@@ -84,19 +53,22 @@ export const sendPasswordResetEmail = async ({
   }
 
   try {
-    await withTimeout(
-      transporter.sendMail({
-        from: config.smtp.from,
-        to,
-        subject: 'Reset Your Servexa Account Password',
-        text,
-        html,
-      }),
-      EMAIL_TIMEOUT_MS
-    );
+    const { error } = await resend.emails.send({
+      from: config.emailFrom,
+      to: [to],
+      subject: 'Reset Your Servexa Account Password',
+      text,
+      html,
+    });
+
+    if (error) {
+      console.error('[EMAIL ERROR] Resend returned an error:', error);
+      return false;
+    }
+
     return true;
   } catch (error) {
-    console.error('[EMAIL ERROR] Failed to send password reset email:', error);
+    console.error('[EMAIL ERROR] Failed to send password reset email via Resend:', error);
     return false;
   }
 };

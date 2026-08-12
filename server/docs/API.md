@@ -135,7 +135,7 @@ Standardized JSON Response Structures:
 - **Method**: `POST`
 - **URL**: `/auth/forgot-password`
 - **Auth Required**: No (Public)
-- **Description**: Request a password reset link sent via email. Always returns generic success response to prevent email enumeration.
+- **Description**: Request a password reset link sent via email (powered by Resend API). Always returns generic success response to prevent email enumeration.
 - **Request Body**:
   ```json
   {
